@@ -117,7 +117,7 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 		if err := cl.Stop(); err != nil {
 			return err
 		}
-		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, "STOPPED"); err != nil {
+		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
 			return err
 		}
 
@@ -151,7 +151,7 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Unable to start container: %s", err)
 	}
 
-	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, "RUNNING"); err != nil {
+	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, []string{"RUNNING"}); err != nil {
 		return err
 	}
 
@@ -188,7 +188,7 @@ func resourceLXCCloneDelete(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, "STOPPED"); err != nil {
+		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
 			return err
 		}
 	}

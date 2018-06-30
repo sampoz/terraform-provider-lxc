@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/plugin"
-	"github.com/jtopjian/terraform-provider-lxc/lxc"
+	"github.com/axsh/terraform-provider-lxc/lxc"
 )
 
 func main() {

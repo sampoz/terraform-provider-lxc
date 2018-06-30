@@ -24,7 +24,7 @@ func lxcContainerStateRefreshFunc(name, lxcpath string) resource.StateRefreshFun
 	}
 }
 
-func lxcWaitForState(c *lxc.Container, LXCPath string, pendingStates []string, targetState string) error {
+func lxcWaitForState(c *lxc.Container, LXCPath string, pendingStates []string, targetState []string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending:    pendingStates,
 		Target:     targetState,
