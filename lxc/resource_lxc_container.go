@@ -124,6 +124,7 @@ func resourceLXCContainer() *schema.Resource {
 						"options": &schema.Schema{
 							Type:     schema.TypeMap,
 							Optional: true,
+							ForceNew: true,
 							Default:  nil,
 						},
 					},
