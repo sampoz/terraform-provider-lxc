@@ -202,24 +202,24 @@ func resourceLXCContainerCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if err := c.Create(options); err != nil {
-		return err
+		return fmt.Errorf("could not create new container with options %v %v", options, err)
 	}
 
 	d.SetId(c.Name())
 
 	if err := lxcOptions(c, d, config); err != nil {
-		return err
+		return fmt.Errorf("could not configures options %v: %v", config, err)
 	}
 
 	// causes lxc to re-read the config file
 	c, err = lxc.NewContainer(name, config.LXCPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create new container %s from config %v", name, config.LXCPath, err)
 	}
 
 	log.Printf("[INFO] Starting container %s\n", c.Name())
 	if err := c.Start(); err != nil {
-		return fmt.Errorf("Unable to start container: %s", err)
+		return fmt.Errorf("[ERROR] Unable to start container: %s", err)
 	}
 
 	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, []string{"RUNNING"}); err != nil {
