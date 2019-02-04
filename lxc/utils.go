@@ -86,22 +86,25 @@ func lxcOptions(c *lxc.Container, d *schema.ResourceData, meta interface{}) erro
 
 	}
 
-	// if the lxc.include line was not found, add it.
-	if includeFound == false {
-		buf.WriteString(strings.Join([]string{includeLine, "\n"}, ""))
-		lines = append(lines, includeLine, "\n")
-	}
-
-	if err := ioutil.WriteFile(configFile, buf.Bytes(), 0640); err != nil {
-		return err
-	}
-
 	// now rewrite all custom config options
 	if len(options) > 0 {
+
 		log.Printf("[DEBUG] %v", options)
 		if err := ioutil.WriteFile(customConfigFile, []byte(strings.Join(options, "\n")), 0640); err != nil {
 			return err
 		}
+
+		// if the lxc.include line was not found, add it.
+		if includeFound == false {
+			buf.WriteString(strings.Join([]string{includeLine, "\n"}, ""))
+			lines = append(lines, includeLine, "\n")
+		}
+	}
+
+	// rewrite the base config file, this is needed in case no nic was specified
+	// as lxc includes one by default
+	if err := ioutil.WriteFile(configFile, buf.Bytes(), 0640); err != nil {
+		return err
 	}
 
 	return nil
