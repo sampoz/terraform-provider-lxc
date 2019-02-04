@@ -43,7 +43,7 @@ func resourceLXCBridgeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	bridge, err := netlink.LinkByName(br)
 	if err != nil {
-		bridge = &netlink.Bridge{netlink.LinkAttrs{
+		bridge = &netlink.Bridge{LinkAttrs: netlink.LinkAttrs{
 			Name: d.Get("name").(string),
 		}}
 		if err := netlink.LinkAdd(bridge); err != nil {
