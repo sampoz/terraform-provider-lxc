@@ -70,6 +70,7 @@ func resourceLXCClone() *schema.Resource {
 						"options": &schema.Schema{
 							Type:     schema.TypeMap,
 							Optional: true,
+							ForceNew: true,
 							Default:  nil,
 						},
 					},
@@ -115,7 +116,10 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Stopping %s", source)
 	if cl.State() == lxc.RUNNING {
 		if err := cl.Stop(); err != nil {
-			return err
+			// prevent failure caused by multiple clones using same source target
+			if err.Error() != fmt.Sprintf("%s: %v", lxc.ErrNotRunning, source) {
+				return err
+			}
 		}
 		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
 			return err
