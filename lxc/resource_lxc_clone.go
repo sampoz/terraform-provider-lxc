@@ -3,6 +3,7 @@ package lxc
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -117,11 +118,14 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 	if cl.State() == lxc.RUNNING {
 		if err := cl.Stop(); err != nil {
 			// prevent failure caused by multiple clones using same source target
-			if err.Error() != fmt.Sprintf("%s: %v", lxc.ErrNotRunning, source) {
+			if !strings.Contains(err.Error(), lxc.ErrNotRunning.Error()) {
 				return err
 			}
 		}
 		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
+			if !strings.Contains(err.Error(), lxc.ErrNotRunning.Error()) {
+				return err
+			}
 			return err
 		}
 
