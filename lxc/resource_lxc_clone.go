@@ -3,6 +3,7 @@ package lxc
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -70,6 +71,7 @@ func resourceLXCClone() *schema.Resource {
 						"options": &schema.Schema{
 							Type:     schema.TypeMap,
 							Optional: true,
+							ForceNew: true,
 							Default:  nil,
 						},
 					},
@@ -115,9 +117,15 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Stopping %s", source)
 	if cl.State() == lxc.RUNNING {
 		if err := cl.Stop(); err != nil {
-			return err
+			// prevent failure caused by multiple clones using same source target
+			if !strings.Contains(err.Error(), lxc.ErrNotRunning.Error()) {
+				return err
+			}
 		}
-		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, "STOPPED"); err != nil {
+		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
+			if !strings.Contains(err.Error(), lxc.ErrNotRunning.Error()) {
+				return err
+			}
 			return err
 		}
 
@@ -151,7 +159,7 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Unable to start container: %s", err)
 	}
 
-	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, "RUNNING"); err != nil {
+	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, []string{"RUNNING"}); err != nil {
 		return err
 	}
 
@@ -188,7 +196,7 @@ func resourceLXCCloneDelete(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, "STOPPED"); err != nil {
+		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
 			return err
 		}
 	}

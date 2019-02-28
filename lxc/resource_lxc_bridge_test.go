@@ -34,7 +34,7 @@ func TestLXCBridge(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"lxc_bridge.accept_test_iface", "name", "accept_test_iface"),
 					resource.TestCheckResourceAttr(
-						"lxc_bridge.accept_test_iface", "hostInterface", "accept_test"),
+						"lxc_bridge.accept_test_iface", "host_interface", "accept_test"),
 				),
 			},
 		},
@@ -96,5 +96,5 @@ var testAccLXCBridge = `
 var testAccLXCBridgeWithIface = `
 	resource "lxc_bridge" "accept_test" {
 		name = "accept_test_ip"
-		hostInterface = "accept_test"
+		host_interface = "accept_test"
 	}`

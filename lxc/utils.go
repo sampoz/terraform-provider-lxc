@@ -1,6 +1,7 @@
 package lxc
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,7 +25,7 @@ func lxcContainerStateRefreshFunc(name, lxcpath string) resource.StateRefreshFun
 	}
 }
 
-func lxcWaitForState(c *lxc.Container, LXCPath string, pendingStates []string, targetState string) error {
+func lxcWaitForState(c *lxc.Container, LXCPath string, pendingStates []string, targetState []string) error {
 	stateConf := &resource.StateChangeConf{
 		Pending:    pendingStates,
 		Target:     targetState,
@@ -45,7 +46,6 @@ func lxcWaitForState(c *lxc.Container, LXCPath string, pendingStates []string, t
 func lxcOptions(c *lxc.Container, d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	var options []string
-	optionsFound := false
 	includeFound := false
 	configFile := config.LXCPath + "/" + c.Name() + "/config"
 	customConfigFile := config.LXCPath + "/" + c.Name() + "/config_tf"
@@ -62,7 +62,6 @@ func lxcOptions(c *lxc.Container, d *schema.ResourceData, meta interface{}) erro
 
 	containerOptions := d.Get("options").(map[string]interface{})
 	if containerOptions != nil {
-		optionsFound = true
 		for k, v := range containerOptions {
 			options = append(options, fmt.Sprintf("%s = %s", k, v.(string)))
 		}
@@ -73,27 +72,39 @@ func lxcOptions(c *lxc.Container, d *schema.ResourceData, meta interface{}) erro
 		return err
 	}
 
-	if optionsFound == true {
-		lines := strings.Split(string(configFileContents), "\n")
-		for _, line := range lines {
-			if line == includeLine {
-				includeFound = true
-			}
+	var buf bytes.Buffer
+	lines := strings.Split(string(configFileContents), "\n")
+	for _, line := range lines {
+		if line == includeLine {
+			includeFound = true
 		}
-
-		// if the lxc.include line was not found, add it.
-		if includeFound == false {
-			lines = append(lines, includeLine, "\n")
-			if err := ioutil.WriteFile(configFile, []byte(strings.Join(lines, "\n")), 0640); err != nil {
-				return err
-			}
+		// ignore network settings
+		if bytes.Contains([]byte(line), []byte("lxc.network")) {
+			continue
 		}
+		buf.WriteString(strings.Join([]string{line, "\n"}, ""))
 
-		// now rewrite all custom config options
+	}
+
+	// now rewrite all custom config options
+	if len(options) > 0 {
+
 		log.Printf("[DEBUG] %v", options)
 		if err := ioutil.WriteFile(customConfigFile, []byte(strings.Join(options, "\n")), 0640); err != nil {
 			return err
 		}
+
+		// if the lxc.include line was not found, add it.
+		if includeFound == false {
+			buf.WriteString(strings.Join([]string{includeLine, "\n"}, ""))
+			lines = append(lines, includeLine, "\n")
+		}
+	}
+
+	// rewrite the base config file, this is needed in case no nic was specified
+	// as lxc includes one by default
+	if err := ioutil.WriteFile(configFile, buf.Bytes(), 0640); err != nil {
+		return err
 	}
 
 	return nil

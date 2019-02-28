@@ -124,6 +124,7 @@ func resourceLXCContainer() *schema.Resource {
 						"options": &schema.Schema{
 							Type:     schema.TypeMap,
 							Optional: true,
+							ForceNew: true,
 							Default:  nil,
 						},
 					},
@@ -201,27 +202,27 @@ func resourceLXCContainerCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if err := c.Create(options); err != nil {
-		return err
+		return fmt.Errorf("could not create new container with options %v %v", options, err)
 	}
 
 	d.SetId(c.Name())
 
 	if err := lxcOptions(c, d, config); err != nil {
-		return err
+		return fmt.Errorf("could not configures options %v: %v", config, err)
 	}
 
 	// causes lxc to re-read the config file
 	c, err = lxc.NewContainer(name, config.LXCPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create new container %s from config %v", name, config.LXCPath, err)
 	}
 
 	log.Printf("[INFO] Starting container %s\n", c.Name())
 	if err := c.Start(); err != nil {
-		return fmt.Errorf("Unable to start container: %s", err)
+		return fmt.Errorf("[ERROR] Unable to start container: %s", err)
 	}
 
-	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, "RUNNING"); err != nil {
+	if err := lxcWaitForState(c, config.LXCPath, []string{"STOPPED", "STARTING"}, []string{"RUNNING"}); err != nil {
 		return err
 	}
 
@@ -229,11 +230,11 @@ func resourceLXCContainerCreate(d *schema.ResourceData, meta interface{}) error 
 		if defined {
 			for _, command := range commands.([]interface{}) {
 				args, err := shlex.Split(command.(string))
-				if( err != nil ){
-					log.Printf("[ERROR] Error parsing arguments for command %d, skipping to next command",command.(string))
-				}else{
+				if err != nil {
+					log.Printf("[ERROR] Error parsing arguments for command %s, skipping to next command", command.(string))
+				} else {
 					log.Printf("[INFO] Running command in container %s : %s\n", c.Name(), command.(string))
-					c.RunCommand(args,lxc.DefaultAttachOptions)
+					c.RunCommand(args, lxc.DefaultAttachOptions)
 				}
 			}
 		}
@@ -272,7 +273,7 @@ func resourceLXCContainerDelete(d *schema.ResourceData, meta interface{}) error 
 			return err
 		}
 
-		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, "STOPPED"); err != nil {
+		if err := lxcWaitForState(c, config.LXCPath, []string{"RUNNING", "STOPPING"}, []string{"STOPPED"}); err != nil {
 			return err
 		}
 	}

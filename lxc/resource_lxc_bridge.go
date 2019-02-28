@@ -23,7 +23,7 @@ func resourceLXCBridge() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"hostInterface": &schema.Schema{
+			"host_interface": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
@@ -43,17 +43,17 @@ func resourceLXCBridgeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	bridge, err := netlink.LinkByName(br)
 	if err != nil {
-		bridge = &netlink.Bridge{netlink.LinkAttrs{
+		bridge = &netlink.Bridge{LinkAttrs: netlink.LinkAttrs{
 			Name: d.Get("name").(string),
 		}}
 		if err := netlink.LinkAdd(bridge); err != nil {
 			return fmt.Errorf("Error creating bridge %s: %v", br, err)
 		}
 
-		if ifaceName, ok := d.GetOk("hostInterface"); ok {
+		if ifaceName, ok := d.GetOk("host_interface"); ok {
 			iface, err := netlink.LinkByName(ifaceName.(string))
 			if err != nil {
-				return fmt.Errorf("Error adding host interface %s to bridge %s : unknow host interface %v", ifaceName, br ,err)
+				return fmt.Errorf("Error adding host interface %s to bridge %s : unknow host interface %v", ifaceName, br, err)
 			}
 
 			if err := netlink.LinkSetMasterByIndex(iface, bridge.Attrs().Index); err != nil {
