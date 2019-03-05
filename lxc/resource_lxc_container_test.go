@@ -11,7 +11,6 @@ import (
 )
 
 func TestLXCContainer(t *testing.T) {
-	var container lxc.Container
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -21,7 +20,7 @@ func TestLXCContainer(t *testing.T) {
 				Config: testAccLXCContainer,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLXCContainerExists(
-						t, "lxc_container.accept_test", &container),
+						t, "lxc_container.accept_test", new(lxc.Container)),
 					resource.TestCheckResourceAttr(
 						"lxc_container.accept_test", "name", "accept_test"),
 				),
@@ -49,7 +48,9 @@ func testAccCheckLXCContainerExists(t *testing.T, n string, container *lxc.Conta
 		c := lxc.ActiveContainers(config.LXCPath)
 		for i := range c {
 			if c[i].Name() == rs.Primary.ID {
-				*container = c[i]
+				// todo: assigning the container here currently does nothing,
+				// we should test some more variables or don't assign it at all
+				container = c[i]
 				return nil
 			}
 		}

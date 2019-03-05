@@ -214,7 +214,7 @@ func resourceLXCContainerCreate(d *schema.ResourceData, meta interface{}) error 
 	// causes lxc to re-read the config file
 	c, err = lxc.NewContainer(name, config.LXCPath)
 	if err != nil {
-		return fmt.Errorf("could not create new container %s from config %v", name, config.LXCPath, err)
+		return fmt.Errorf("could not create new container %s from config %v: %v", name, config.LXCPath, err)
 	}
 
 	log.Printf("[INFO] Starting container %s\n", c.Name())

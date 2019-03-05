@@ -10,6 +10,8 @@ import (
 	"gopkg.in/lxc/go-lxc.v2"
 )
 
+var isStopping = map[string]struct{}{}
+
 func resourceLXCClone() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLXCCloneCreate,
@@ -91,6 +93,19 @@ func resourceLXCClone() *schema.Resource {
 	}
 }
 
+func tryStop(c *lxc.Container) error {
+	if err := c.Stop(); err != nil {
+		if c.State() != lxc.STOPPED || c.State() != lxc.STOPPING {
+			return nil
+		}
+		if strings.Contains(err.Error(), lxc.ErrNotRunning.Error()) {
+			return nil
+		}
+		return fmt.Errorf("failed to stop container: %v\n", err)
+	}
+	return nil
+}
+
 func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 	var c *lxc.Container
 	config := meta.(*Config)
@@ -116,9 +131,9 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 	// the source container must be stopped
 	log.Printf("[INFO] Stopping %s", source)
 	if cl.State() == lxc.RUNNING {
-		if err := cl.Stop(); err != nil {
-			// prevent failure caused by multiple clones using same source target
-			if !strings.Contains(err.Error(), lxc.ErrNotRunning.Error()) {
+		if _, ok := isStopping[cl.Name()]; !ok {
+			isStopping[cl.Name()] = struct{}{}
+			if err := tryStop(cl); err != nil {
 				return err
 			}
 		}
@@ -128,7 +143,6 @@ func resourceLXCCloneCreate(d *schema.ResourceData, meta interface{}) error {
 			}
 			return err
 		}
-
 	}
 
 	log.Printf("[INFO] Cloning %s as %s", source, name)
