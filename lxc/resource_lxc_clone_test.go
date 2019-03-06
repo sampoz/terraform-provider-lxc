@@ -11,25 +11,13 @@ import (
 )
 
 func TestLXCClone(t *testing.T) {
-	testResource(t, testAccLXCClone)
-}
-
-func TestLXCCloneSnapshot(t *testing.T) {
-	testResource(t, testAccLXCCloneSnapshot)
-}
-
-func TestLXCCloneMixed(t *testing.T) {
-	testResource(t, testAccLXCCloneMixed)
-}
-
-func testResource(t *testing.T, conf string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLXCCloneDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: conf,
+				Config: testAccLXCClone,
 				Check:  resource.ComposeTestCheckFunc(testCheckLXCCloneResources(t)...),
 			},
 		},
@@ -38,7 +26,7 @@ func testResource(t *testing.T, conf string) {
 
 func testCheckLXCCloneResources(t *testing.T) []resource.TestCheckFunc {
 	tests := []resource.TestCheckFunc{}
-	for i := 0; i <= 5; i++ {
+	for i := 0; i <= 3; i++ {
 		r := fmt.Sprintf("accept_clone%d", i)
 		rId := fmt.Sprintf("lxc_clone.%s", r)
 		tests = append(tests, testAccCheckLXCCloneExists(t, rId, new(lxc.Container)))
@@ -115,91 +103,11 @@ var testAccLXCClone = `
 	resource "lxc_clone" "accept_clone2" {
 		name = "accept_clone2"
 		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone3" {
-		name = "accept_clone3"
-		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone4" {
-		name = "accept_clone4"
-		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone5" {
-		name = "accept_clone5"
-		source = "${lxc_container.accept_test.name}"
-	}
-`
-
-var testAccLXCCloneSnapshot = `
-	resource "lxc_container" "accept_test" {
-		name = "accept_test"
-	}
-	resource "lxc_clone" "accept_clone0" {
-		name = "accept_clone0"
-		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone1" {
-		name = "accept_clone1"
-		source = "${lxc_container.accept_test.name}"
-        backend = "overlayfs"
-        snapshot = true
-	}
-	resource "lxc_clone" "accept_clone2" {
-		name = "accept_clone2"
-		source = "${lxc_container.accept_test.name}"
         backend = "overlayfs"
         snapshot = true
 	}
 	resource "lxc_clone" "accept_clone3" {
 		name = "accept_clone3"
-		source = "${lxc_container.accept_test.name}"
-        backend = "overlayfs"
-        snapshot = true
-	}
-	resource "lxc_clone" "accept_clone4" {
-		name = "accept_clone4"
-		source = "${lxc_container.accept_test.name}"
-        backend = "overlayfs"
-        snapshot = true
-	}
-	resource "lxc_clone" "accept_clone5" {
-		name = "accept_clone5"
-		source = "${lxc_container.accept_test.name}"
-        backend = "overlayfs"
-        snapshot = true
-	}
-`
-
-var testAccLXCCloneMixed = `
-	resource "lxc_container" "accept_test" {
-		name = "accept_test"
-	}
-	resource "lxc_clone" "accept_clone0" {
-		name = "accept_clone0"
-		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone1" {
-		name = "accept_clone1"
-		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone2" {
-		name = "accept_clone2"
-		source = "${lxc_container.accept_test.name}"
-	}
-	resource "lxc_clone" "accept_clone3" {
-		name = "accept_clone3"
-		source = "${lxc_container.accept_test.name}"
-        backend = "overlayfs"
-        snapshot = true
-	}
-	resource "lxc_clone" "accept_clone4" {
-		name = "accept_clone4"
-		source = "${lxc_container.accept_test.name}"
-        backend = "overlayfs"
-        snapshot = true
-	}
-	resource "lxc_clone" "accept_clone5" {
-		name = "accept_clone5"
 		source = "${lxc_container.accept_test.name}"
         backend = "overlayfs"
         snapshot = true
