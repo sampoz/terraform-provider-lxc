@@ -84,4 +84,11 @@ func testAccCheckLXCContainerDestroy(s *terraform.State) error {
 var testAccLXCContainer = `
 	resource "lxc_container" "accept_test" {
 		name = "accept_test"
+
+        network_interface {
+            type = "veth"
+            options {
+               veth.pair = "accept_test_if"
+            }
+        }
 	}`
